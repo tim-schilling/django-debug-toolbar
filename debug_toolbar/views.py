@@ -6,8 +6,8 @@ views in any other way is generally not advised.
 
 from __future__ import unicode_literals
 
-from django.http import HttpResponseBadRequest
-from django.shortcuts import render
+from django.http import HttpResponse, HttpResponseBadRequest
+from django.shortcuts import render, render_to_response
 from django.views.decorators.csrf import csrf_exempt
 
 from debug_toolbar.forms import SQLSelectForm
@@ -160,3 +160,36 @@ def template_source(request):
         'source': source,
         'template_name': template_name
     })
+
+
+def ajax_request(request, req_id):
+    """
+    Returns the Debug Toolbar HTML for the given request ID.
+    """
+    from debug_toolbar.panels.ajax import AjaxDebugPanel
+    from debug_toolbar.middleware import DebugToolbarMiddleware
+    toolbar = DebugToolbarMiddleware.get_current()
+    try:
+        ajax_panel = toolbar.get_panel(AjaxDebugPanel)
+    except IndexError:
+        raise ValueError('AjaxDebugPanel must be enabled to use this view.')
+    ddt_html = ajax_panel.get_html(request, req_id)
+    if ddt_html:
+        return HttpResponse(ddt_html)
+    else:
+        return HttpResponseBadRequest('No such request {0}'.format(req_id))
+
+
+def ajax_list(request):
+    """
+    Returns the latest list of AJAX requests in HTML format.
+    """
+    from debug_toolbar.panels.ajax import AjaxDebugPanel
+    from debug_toolbar.middleware import DebugToolbarMiddleware
+    toolbar = DebugToolbarMiddleware.get_current()
+    try:
+        ajax_panel = toolbar.get_panel(AjaxDebugPanel)
+    except IndexError:
+        raise ValueError('AjaxDebugPanel must be enabled to use this view.')
+    context = ajax_panel.get_context(request)
+    return render_to_response('debug_toolbar/panels/ajax.html', context)

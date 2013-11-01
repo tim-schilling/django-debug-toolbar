@@ -16,4 +16,6 @@ urlpatterns = patterns('debug_toolbar.views',                           # noqa
     url(r'^%s/sql_explain/$' % _PREFIX, 'sql_explain', name='sql_explain'),
     url(r'^%s/sql_profile/$' % _PREFIX, 'sql_profile', name='sql_profile'),
     url(r'^%s/template_source/$' % _PREFIX, 'template_source', name='template_source'),
+    url(r'^%s/ajax_request/$' % _PREFIX, 'ajax_list', name='ajax_list'),
+    url(r'^%s/ajax_request/(?P<req_id>[\w-]+)/$' % _PREFIX, 'ajax_request', name='ajax_request'),
 )

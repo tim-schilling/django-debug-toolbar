@@ -2,10 +2,13 @@
 
 from __future__ import unicode_literals
 
+import types
 from xml.etree import ElementTree as ET
 
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.db import IntegrityError, transaction
+from django.http import HttpResponse
 from django.test import TestCase, RequestFactory
 from django.test.utils import override_settings
 from django.utils import six
@@ -119,6 +122,17 @@ class DebugToolbarTestCase(BaseTestCase):
         self.assertEqual(stats['view_kwargs'], 'None')
         self.assertEqual(stats['view_func'], '<no view>')
 
+    def test_attaching_debug_toolbar(self):
+        # Smoke test: ensure debug toolbar is attached to the response during a typical scenario
+        request, response = self.request, self.response
+        response.content = '<body></body>'
+        with self.settings(INTERNAL_IPS=['127.0.0.1'], DEBUG_TOOLBAR_CONFIG=dict(TAG='body')):
+            middleware = DebugToolbarMiddleware()
+            middleware.process_request(request)
+            middleware.process_response(request, response)
+            self.assertIn('djDebug', response.content)
+            self.assertIn('<script', response.content)
+
 
 @override_settings(DEBUG=True)
 class DebugToolbarIntegrationTestCase(TestCase):
@@ -183,3 +197,71 @@ class DebugToolbarIntegrationTestCase(TestCase):
                 else:
                     response = self.client.get('/new_user/')
             self.assertEqual(User.objects.count(), 1)
+
+
+@override_settings(DEBUG=True, INTERNAL_IPS=['127.0.0.1'])
+class MiddlewareAjaxTestCase(BaseTestCase):
+    urls = 'tests.urls'
+
+    def test_response_to_ajax_request_stays_unchanged(self):
+        request = request = rf.get('/')
+        request.META['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest'
+        response = HttpResponse('<body></body>')
+        with self.settings(DEBUG_TOOLBAR_CONFIG=dict(TAG='body')):
+            middleware = DebugToolbarMiddleware()
+            middleware.process_request(request)
+            middleware.process_response(request, response)
+            self.assertEquals(response.content, '<body></body>')
+
+    def test_handling_ajax_request(self):
+        request = request = rf.get('/')
+        request.META['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest'
+        response = self.response
+        middleware = DebugToolbarMiddleware()
+
+        def handler_mock(self, toolbar, ddt_html, request, response):
+            handler_mock.called = True
+            handler_mock.ddt_html = ddt_html
+        handler_mock.called = False
+        middleware._handle_ajax = types.MethodType(handler_mock, middleware)
+
+        middleware.process_request(request)
+        middleware.process_response(request, response)
+        self.assertTrue(handler_mock.called)
+        self.assertNotIn('<script', handler_mock.ddt_html)
+
+    def test_internal_ajax_requests_are_ignored(self):
+        with self.settings(ROOT_URLCONF='debug_toolbar.urls'):
+            request = request = rf.get(reverse('ajax_list'))
+            request.META['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest'
+            response = self.response
+            middleware = DebugToolbarMiddleware()
+
+            def handler_mock(self, toolbar, ddt_html, request, response):
+                handler_mock.called = True
+                handler_mock.ddt_html = ddt_html
+            handler_mock.called = False
+            middleware._handle_ajax = types.MethodType(handler_mock, middleware)
+
+            middleware.process_request(request)
+            middleware.process_response(request, response)
+            self.assertTrue(not handler_mock.called)
+
+    def test_handling_initial_request(self):
+        request = request = rf.get('/')
+        response = HttpResponse('<body></body>')
+        with self.settings(DEBUG_TOOLBAR_CONFIG=dict(TAG='body')):
+            middleware = DebugToolbarMiddleware()
+
+            def handler_mock(self, toolbar, ddt_html, request, response):
+                handler_mock.called = True
+                handler_mock.is_ajax = request.is_ajax()
+                handler_mock.ddt_html = ddt_html
+            handler_mock.called = False
+            middleware._handle_ajax = types.MethodType(handler_mock, middleware)
+
+            middleware.process_request(request)
+            middleware.process_response(request, response)
+            self.assertTrue(handler_mock.called)
+            self.assertFalse(handler_mock.is_ajax)
+            self.assertNotIn('<script', handler_mock.ddt_html)

@@ -4,6 +4,7 @@ Debug Toolbar middleware
 
 from __future__ import unicode_literals
 
+from functools import partial
 import imp
 import threading
 
@@ -67,6 +68,15 @@ class DebugToolbarMiddleware(object):
         # The tag to attach the toolbar to
         self.tag = '</%s>' % CONFIG['TAG']
 
+    def _handle_ajax(self, toolbar, ddt_html, request, response):
+        from debug_toolbar.panels.ajax import AjaxDebugPanel
+        try:
+            ajax_panel = toolbar.get_panel(AjaxDebugPanel)
+        except IndexError:
+            ajax_panel = None
+        if ajax_panel:
+            ajax_panel.record(request, ddt_html)
+
     def process_request(self, request):
         __traceback_hide__ = True                                       # noqa
         if self.show_toolbar(request):
@@ -117,7 +127,7 @@ class DebugToolbarMiddleware(object):
         __traceback_hide__ = True                                       # noqa
         ident = threading.current_thread().ident
         toolbar = self.__class__.debug_toolbars.get(ident)
-        if not toolbar or request.is_ajax() or getattr(response, 'streaming', False):
+        if not toolbar or getattr(response, 'streaming', False):
             return response
         if isinstance(response, HttpResponseRedirect):
             if not toolbar.config['INTERCEPT_REDIRECTS']:
@@ -137,11 +147,21 @@ class DebugToolbarMiddleware(object):
                 if panel.disabled:
                     continue
                 panel.process_response(request, response)
-            response.content = replace_insensitive(
-                force_text(response.content, encoding=settings.DEFAULT_CHARSET),
-                self.tag,
-                force_text(toolbar.render_toolbar() + self.tag))
-            if response.get('Content-Length', None):
-                response['Content-Length'] = len(response.content)
+
+            content = force_text(response.content, encoding=settings.DEFAULT_CHARSET)
+            map_force_text = partial(force_text, encoding=settings.DEFAULT_CHARSET)
+            ddt_html, ddt_html_js = map(
+                map_force_text,
+                toolbar.render_toolbar(include_js=not request.is_ajax()))
+            if request.is_ajax():
+                if not request.path.startswith('/' + debug_toolbar.urls._PREFIX):
+                    self._handle_ajax(toolbar, ddt_html, request, response)
+            elif self.tag in content:
+                self._handle_ajax(toolbar, ddt_html, request, response)
+                response.content = replace_insensitive(content, self.tag,
+                                                       ddt_html_js + self.tag)
+                if response.get('Content-Length', None):
+                    response['Content-Length'] = len(response.content)
+
         del self.__class__.debug_toolbars[ident]
         return response
