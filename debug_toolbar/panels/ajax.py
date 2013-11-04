@@ -14,8 +14,7 @@ def disable_tracking(cache):
     del cache._django_debug_toolbar_do_not_track
 
 
-class Storage:
-
+class Storage(object):
     def __init__(self, request):
         self.session_key = None
         if hasattr(request, 'session'):
