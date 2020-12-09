@@ -126,7 +126,9 @@ class DebugToolbarIntegrationTestCase(IntegrationTestCase):
             return HttpResponse()
 
         toolbar = DebugToolbar(rf.get("/"), get_response)
-        toolbar.store()
+        toolbar.store_id = 'test-store-id'
+        toolbar.store.store(toolbar.store_id, toolbar)
+
         url = "/__debug__/render_panel/"
         data = {"store_id": toolbar.store_id, "panel_id": "VersionsPanel"}
 
@@ -144,15 +146,15 @@ class DebugToolbarIntegrationTestCase(IntegrationTestCase):
 
     def test_middleware_render_toolbar_json(self):
         """Verify the toolbar is rendered and data is stored for a json request."""
-        self.assertEqual(len(DebugToolbar._store), 0)
+        self.assertEqual(len(DebugToolbar.store.all()), 0)
 
         data = {"foo": "bar"}
         response = self.client.get("/json_view/", data, content_type="application/json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode("utf-8"), '{"foo": "bar"}')
         # Check the history panel's stats to verify the toolbar rendered properly.
-        self.assertEqual(len(DebugToolbar._store), 1)
-        toolbar = list(DebugToolbar._store.values())[0]
+        self.assertEqual(len(DebugToolbar.store.all()), 1)
+        toolbar = list(DebugToolbar.store.all())[0][1]
         self.assertEqual(
             toolbar.get_panel_by_id("HistoryPanel").get_stats()["data"],
             {"foo": ["bar"]},

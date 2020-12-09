@@ -67,14 +67,14 @@ class HistoryViewsTestCase(IntegrationTestCase):
     @override_settings(DEBUG=True)
     def test_history_panel_integration_content(self):
         """Verify the history panel's content renders properly.."""
-        self.assertEqual(len(DebugToolbar._store), 0)
+        self.assertEqual(len(DebugToolbar.store.all()), 0)
 
         data = {"foo": "bar"}
         self.client.get("/json_view/", data, content_type="application/json")
 
         # Check the history panel's stats to verify the toolbar rendered properly.
-        self.assertEqual(len(DebugToolbar._store), 1)
-        toolbar = list(DebugToolbar._store.values())[0]
+        self.assertEqual(len(DebugToolbar.store.all()), 1)
+        toolbar = list(DebugToolbar.store.all())[0][1]
         content = toolbar.get_panel_by_id("HistoryPanel").content
         self.assertIn("bar", content)
 
@@ -91,7 +91,7 @@ class HistoryViewsTestCase(IntegrationTestCase):
         self.assertEqual(response.status_code, 400)
 
     @override_settings(DEBUG=True)
-    @patch("debug_toolbar.panels.history.views.DebugToolbar.fetch")
+    @patch("debug_toolbar.panels.history.views.DebugToolbar.store.fetch")
     def test_history_sidebar_hash(self, fetch):
         """Validate the hashing mechanism."""
         fetch.return_value.panels = []
@@ -107,7 +107,7 @@ class HistoryViewsTestCase(IntegrationTestCase):
     def test_history_sidebar(self):
         """Validate the history sidebar view."""
         self.client.get("/json_view/")
-        store_id = list(DebugToolbar._store.keys())[0]
+        store_id = list(DebugToolbar.store.all())[0][0]
         data = {
             "store_id": store_id,
             "hash": HistoryStoreForm.make_hash({"store_id": store_id}),

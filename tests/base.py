@@ -52,6 +52,5 @@ class IntegrationTestCase(TestCase):
         # The HistoryPanel keeps track of previous stores in memory.
         # This bleeds into other tests and violates their idempotency.
         # Clear the store before each test.
-        for key in list(DebugToolbar._store.keys()):
-            del DebugToolbar._store[key]
+        DebugToolbar.store.clear()
         super().setUp()

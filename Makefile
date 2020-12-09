@@ -26,7 +26,7 @@ package-lock.json: package.json
 
 test:
 	DJANGO_SETTINGS_MODULE=tests.settings \
-		python -m django test $${TEST_ARGS:-tests}
+		python -m django test tests.test_integration.DebugToolbarIntegrationTestCase.test_render_panel_checks_show_toolbar
 
 test_selenium:
 	DJANGO_SELENIUM_TESTS=true DJANGO_SETTINGS_MODULE=tests.settings \

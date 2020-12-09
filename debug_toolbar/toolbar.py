@@ -4,6 +4,7 @@ The main DebugToolbar class that loads and renders the Toolbar.
 
 import uuid
 from collections import OrderedDict
+from functools import lru_cache
 
 from django.apps import apps
 from django.core.exceptions import ImproperlyConfigured
@@ -15,16 +16,32 @@ from django.utils.module_loading import import_string
 from debug_toolbar import settings as dt_settings
 
 
+@lru_cache()
+def get_store_class():
+    # If SHOW_TOOLBAR_CALLBACK is a string, which is the recommended
+    # setup, resolve it to the corresponding callable.
+    class_or_path = dt_settings.get_config()["STORE_CLASS"]
+    if isinstance(class_or_path, str):
+        return import_string(class_or_path)
+    else:
+        return class_or_path
+
+
 class DebugToolbar:
-    def __init__(self, request, get_response):
+    def __init__(self, request, get_response, panel_classes=None):
         self.request = request
         self.config = dt_settings.get_config().copy()
         panels = []
-        for panel_class in reversed(self.get_panel_classes()):
-            panel = panel_class(self, get_response)
-            panels.append(panel)
-            if panel.enabled:
-                get_response = panel.process_request
+        if not panel_classes:
+            for panel_class in reversed(self.get_panel_classes()):
+                panel = panel_class(self, get_response)
+                panels.append(panel)
+                if panel.enabled:
+                    get_response = panel.process_request
+        else:
+            for panel_class in panel_classes:
+                panel = panel_class(self, get_response)
+                panels.append(panel)
         self.process_request = get_response
         self._panels = OrderedDict()
         while panels:
@@ -63,7 +80,10 @@ class DebugToolbar:
         Renders the overall Toolbar with panels inside.
         """
         if not self.should_render_panels():
-            self.store()
+            # Store already exists.
+            if not self.store_id:
+                self.store_id = uuid.uuid4().hex
+            self.store.store(self.store_id, self)
         try:
             context = {"toolbar": self}
             return render_to_string("debug_toolbar/base.html", context)
@@ -84,21 +104,7 @@ class DebugToolbar:
         return render_panels
 
     # Handle storing toolbars in memory and fetching them later on
-
-    _store = OrderedDict()
-
-    def store(self):
-        # Store already exists.
-        if self.store_id:
-            return
-        self.store_id = uuid.uuid4().hex
-        self._store[self.store_id] = self
-        for _ in range(self.config["RESULTS_CACHE_SIZE"], len(self._store)):
-            self._store.popitem(last=False)
-
-    @classmethod
-    def fetch(cls, store_id):
-        return cls._store.get(store_id)
+    store = get_store_class()()
 
     # Manually implement class-level caching of panel classes and url patterns
     # because it's more obvious than going through an abstraction.
