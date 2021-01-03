@@ -4,7 +4,7 @@ from django.test import RequestFactory, override_settings
 from django.urls import resolve, reverse
 
 from debug_toolbar.panels.history.forms import HistoryStoreForm
-from debug_toolbar.toolbar import DebugToolbar
+from debug_toolbar.store import store
 
 from ..base import BaseTestCase, IntegrationTestCase
 
@@ -68,14 +68,14 @@ class HistoryPanelTestCase(BaseTestCase):
 class HistoryViewsTestCase(IntegrationTestCase):
     def test_history_panel_integration_content(self):
         """Verify the history panel's content renders properly.."""
-        self.assertEqual(len(DebugToolbar._store), 0)
+        self.assertEqual(len(store.all()), 0)
 
         data = {"foo": "bar"}
         self.client.get("/json_view/", data, content_type="application/json")
 
         # Check the history panel's stats to verify the toolbar rendered properly.
-        self.assertEqual(len(DebugToolbar._store), 1)
-        toolbar = list(DebugToolbar._store.values())[0]
+        self.assertEqual(len(store.all()), 1)
+        toolbar = list(store.all())[0][1]
         content = toolbar.get_panel_by_id("HistoryPanel").content
         self.assertIn("bar", content)
 
@@ -90,10 +90,10 @@ class HistoryViewsTestCase(IntegrationTestCase):
         response = self.client.get(reverse("djdt:history_sidebar"), data=data)
         self.assertEqual(response.status_code, 400)
 
-    @patch("debug_toolbar.panels.history.views.DebugToolbar.fetch")
-    def test_history_sidebar_hash(self, fetch):
+    @patch("debug_toolbar.panels.history.views.store")
+    def test_history_sidebar_hash(self, store):
         """Validate the hashing mechanism."""
-        fetch.return_value.panels = []
+        store.get.return_value.panels = []
         data = {
             "store_id": "foo",
             "hash": "3280d66a3cca10098a44907c5a1fd255265eed31",
@@ -105,7 +105,7 @@ class HistoryViewsTestCase(IntegrationTestCase):
     def test_history_sidebar(self):
         """Validate the history sidebar view."""
         self.client.get("/json_view/")
-        store_id = list(DebugToolbar._store.keys())[0]
+        store_id = list(store.all())[0][0]
         data = {
             "store_id": store_id,
             "hash": HistoryStoreForm.make_hash({"store_id": store_id}),

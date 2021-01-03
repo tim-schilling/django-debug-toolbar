@@ -3,7 +3,7 @@ from django.template.loader import render_to_string
 
 from debug_toolbar.decorators import require_show_toolbar
 from debug_toolbar.panels.history.forms import HistoryStoreForm
-from debug_toolbar.toolbar import DebugToolbar
+from debug_toolbar.store import store
 
 
 @require_show_toolbar
@@ -13,7 +13,7 @@ def history_sidebar(request):
 
     if form.is_valid():
         store_id = form.cleaned_data["store_id"]
-        toolbar = DebugToolbar.fetch(store_id)
+        toolbar = store.get(store_id)
         context = {}
         for panel in toolbar.panels:
             if not panel.is_historical:
@@ -38,7 +38,7 @@ def history_refresh(request):
 
     if form.is_valid():
         requests = []
-        for id, toolbar in reversed(DebugToolbar._store.items()):
+        for id, toolbar in reversed(store.all()):
             requests.append(
                 {
                     "id": id,
