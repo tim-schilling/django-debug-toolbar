@@ -68,17 +68,17 @@ class DebugToolbarTestCase(BaseTestCase):
         stats = self._resolve_stats("/resolving1/a/b/")
         self.assertEqual(stats["view_urlname"], "positional-resolving")
         self.assertEqual(stats["view_func"], "tests.views.resolving_view")
-        self.assertEqual(stats["view_args"], ("a", "b"))
+        self.assertEqual(stats["view_args"], ["a", "b"])
         self.assertEqual(stats["view_kwargs"], {})
 
     def test_url_resolving_named(self):
         stats = self._resolve_stats("/resolving2/a/b/")
-        self.assertEqual(stats["view_args"], ())
+        self.assertEqual(stats["view_args"], [])
         self.assertEqual(stats["view_kwargs"], {"arg1": "a", "arg2": "b"})
 
     def test_url_resolving_mixed(self):
         stats = self._resolve_stats("/resolving3/a/")
-        self.assertEqual(stats["view_args"], ("a",))
+        self.assertEqual(stats["view_args"], ["a"])
         self.assertEqual(stats["view_kwargs"], {"arg2": "default"})
 
     def test_url_resolving_bad(self):
@@ -159,7 +159,7 @@ class DebugToolbarIntegrationTestCase(IntegrationTestCase):
         """Verify the toolbar is rendered and data is stored for a json request."""
         self.assertEqual(len(store.all()), 0)
 
-        data = {"foo": "bar"}
+        data = {"foo": "bar", "spam[]": ["eggs", "ham"]}
         response = self.client.get("/json_view/", data, content_type="application/json")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.content.decode("utf-8"), '{"foo": "bar"}')
@@ -168,7 +168,7 @@ class DebugToolbarIntegrationTestCase(IntegrationTestCase):
         toolbar = list(store.all())[0][1]
         self.assertEqual(
             toolbar.get_panel_by_id("HistoryPanel").get_stats()["data"],
-            {"foo": ["bar"]},
+            {"foo": ["bar"], "spam[]": ["eggs", "ham"]},
         )
 
     def test_template_source_checks_show_toolbar(self):
@@ -288,13 +288,6 @@ class DebugToolbarIntegrationTestCase(IntegrationTestCase):
                 url, data, HTTP_X_REQUESTED_WITH="XMLHttpRequest"
             )
             self.assertEqual(response.status_code, 404)
-
-    @override_settings(DEBUG_TOOLBAR_CONFIG={"RENDER_PANELS": True})
-    def test_data_store_id_not_rendered_when_none(self):
-        url = "/regular/basic/"
-        response = self.client.get(url)
-        self.assertIn(b'id="djDebug"', response.content)
-        self.assertNotIn(b"data-store-id", response.content)
 
     def test_view_returns_template_response(self):
         response = self.client.get("/template_response/basic/")

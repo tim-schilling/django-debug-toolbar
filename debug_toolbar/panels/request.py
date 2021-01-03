@@ -24,13 +24,11 @@ class RequestPanel(Panel):
         return view_func.rsplit(".", 1)[-1]
 
     def generate_stats(self, request, response):
-        self.record_stats(
-            {
-                "get": get_sorted_request_variable(request.GET),
-                "post": get_sorted_request_variable(request.POST),
-                "cookies": get_sorted_request_variable(request.COOKIES),
-            }
-        )
+        stats = {
+            "get": get_sorted_request_variable(request.GET),
+            "post": get_sorted_request_variable(request.POST),
+            "cookies": get_sorted_request_variable(request.COOKIES),
+        }
 
         view_info = {
             "view_func": _("<no view>"),
@@ -47,10 +45,10 @@ class RequestPanel(Panel):
             view_info["view_urlname"] = getattr(match, "url_name", _("<unavailable>"))
         except Http404:
             pass
-        self.record_stats(view_info)
+        stats.update(view_info)
 
         if hasattr(request, "session"):
-            self.record_stats(
+            stats.update(
                 {
                     "session": [
                         (k, request.session.get(k))
@@ -58,3 +56,4 @@ class RequestPanel(Panel):
                     ]
                 }
             )
+        self.record_stats(stats)
