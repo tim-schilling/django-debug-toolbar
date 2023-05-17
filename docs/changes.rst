@@ -7,6 +7,9 @@ Serializable
 * Defines the ``BaseStore`` interface for request storage mechanisms.
 * Added the config setting ``TOOLBAR_STORE_CLASS`` to configure the request
   storage mechanism. Defaults to ``debug_toolbar.store.MemoryStore``.
+* Defines the ``BaseStore`` interface for request storage mechanisms.
+* Added the setting ``TOOLBAR_STORE_CLASS`` to configure the request
+  storage mechanism. Defaults to ``debug_toolbar.store.MemoryStore``.
 
 Pending
 -------
