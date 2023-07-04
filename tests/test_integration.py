@@ -106,18 +106,18 @@ class DebugToolbarTestCase(BaseTestCase):
         stats = self._resolve_stats("/resolving1/a/b/")
         self.assertEqual(stats["view_urlname"], "positional-resolving")
         self.assertEqual(stats["view_func"], "tests.views.resolving_view")
-        self.assertEqual(stats["view_args"], ("a", "b"))
-        self.assertEqual(stats["view_kwargs"], {})
+        self.assertEqual(stats["view_args"], "('a', 'b')")
+        self.assertEqual(stats["view_kwargs"], "{}")
 
     def test_url_resolving_named(self):
         stats = self._resolve_stats("/resolving2/a/b/")
-        self.assertEqual(stats["view_args"], ())
-        self.assertEqual(stats["view_kwargs"], {"arg1": "a", "arg2": "b"})
+        self.assertEqual(stats["view_args"], "()")
+        self.assertEqual(stats["view_kwargs"], "{'arg1': 'a', 'arg2': 'b'}")
 
     def test_url_resolving_mixed(self):
         stats = self._resolve_stats("/resolving3/a/")
-        self.assertEqual(stats["view_args"], ("a",))
-        self.assertEqual(stats["view_kwargs"], {"arg2": "default"})
+        self.assertEqual(stats["view_args"], "('a',)")
+        self.assertEqual(stats["view_kwargs"], "{'arg2': 'default'}")
 
     def test_url_resolving_bad(self):
         stats = self._resolve_stats("/non-existing-url/")

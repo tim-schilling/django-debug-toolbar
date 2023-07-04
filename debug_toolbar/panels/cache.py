@@ -7,7 +7,12 @@ from django.core.cache import CacheHandler, caches
 from django.utils.translation import gettext_lazy as _, ngettext
 
 from debug_toolbar.panels import Panel
-from debug_toolbar.utils import get_stack_trace, get_template_info, render_stacktrace
+from debug_toolbar.utils import (
+    get_stack_trace,
+    get_template_info,
+    pprint,
+    render_stacktrace,
+)
 
 # The order of the methods in this list determines the order in which they are listed in
 # the Commands table in the panel content.
@@ -128,11 +133,11 @@ class CachePanel(Panel):
             {
                 "time": time_taken,
                 "name": name,
-                "args": args,
-                "kwargs": kwargs,
+                "args": pprint(args),
+                "kwargs": pprint(kwargs),
                 "trace": render_stacktrace(trace),
                 "template_info": template_info,
-                "backend": backend,
+                "backend": repr(backend),
             }
         )
 
@@ -169,12 +174,12 @@ class CachePanel(Panel):
 
     @property
     def nav_subtitle(self):
-        cache_calls = len(self.calls)
+        stats = self.get_stats()
         return ngettext(
             "%(cache_calls)d call in %(time).2fms",
             "%(cache_calls)d calls in %(time).2fms",
-            cache_calls,
-        ) % {"cache_calls": cache_calls, "time": self.total_time}
+            stats["total_calls"],
+        ) % {"cache_calls": stats["total_calls"], "time": stats["total_time"]}
 
     @property
     def title(self):

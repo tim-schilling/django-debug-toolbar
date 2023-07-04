@@ -170,25 +170,32 @@ class TemplatesPanel(Panel):
     def generate_stats(self, request, response):
         template_context = []
         for template_data in self.templates:
-            info = {}
             # Clean up some info about templates
             template = template_data["template"]
             if hasattr(template, "origin") and template.origin and template.origin.name:
-                template.origin_name = template.origin.name
-                template.origin_hash = signing.dumps(template.origin.name)
+                origin_name = template.origin.name
+                origin_hash = signing.dumps(template.origin.name)
             else:
-                template.origin_name = _("No origin")
-                template.origin_hash = ""
-            info["template"] = template
+                origin_name = _("No origin")
+                origin_hash = ""
             # Clean up context for better readability
-            if self.toolbar.config["SHOW_TEMPLATE_CONTEXT"]:
-                context_list = template_data.get("context", [])
-                info["context"] = "\n".join(context_list)
-            template_context.append(info)
+            template_context.append(
+                {
+                    "origin_name": origin_name,
+                    "origin_hash": origin_hash,
+                    "name": template.name,
+                    "context": template_data.get("context"),
+                }
+            )
 
         # Fetch context_processors/template_dirs from any template
         if self.templates:
             context_processors = self.templates[0]["context_processors"]
+            if context_processors:
+                # Convert the context processor values into a serializable value.
+                context_processors = {
+                    key: repr(value) for key, value in context_processors.items()
+                }
             template = self.templates[0]["template"]
             # django templates have the 'engine' attribute, while jinja
             # templates use 'backend'
@@ -205,3 +212,10 @@ class TemplatesPanel(Panel):
                 "context_processors": context_processors,
             }
         )
+
+    def get_stats(self):
+        stats = super().get_stats()
+        if self.toolbar.config["SHOW_TEMPLATE_CONTEXT"]:
+            for template in stats.setdefault("templates", []):
+                template["context"] = "\n".join(template.get("context", []))
+        return stats

@@ -15,12 +15,12 @@
   <tbody>
     {% for key, value in variables.list %}
       <tr>
-        <td><code>{{ key|pprint }}</code></td>
-        <td><code>{{ value|pprint }}</code></td>
+        <td><code>{{ key }}</code></td>
+        <td><code>{{ value }}</code></td>
       </tr>
     {% endfor %}
   </tbody>
 </table>
 {% elif variables.raw %}
-<code class="djdt-raw">{{ variables.raw|pprint }}</code>
+<code class="djdt-raw">{{ variables.raw }}</code>
 {% endif %}

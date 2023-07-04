@@ -1,6 +1,7 @@
 from django.template.loader import render_to_string
 
 from debug_toolbar import settings as dt_settings
+from debug_toolbar.store import get_store
 from debug_toolbar.utils import get_name_from_obj
 
 
@@ -166,8 +167,12 @@ class Panel:
         Store data gathered by the panel. ``stats`` is a :class:`dict`.
 
         Each call to ``record_stats`` updates the statistics dictionary.
+
+        Saves the updated stats for the panel in the store.
         """
         self.toolbar.stats.setdefault(self.panel_id, {}).update(stats)
+        panel_stats = self.toolbar.stats[self.panel_id]
+        get_store().save_panel(self.toolbar.store_id, self.panel_id, panel_stats)
 
     def get_stats(self):
         """

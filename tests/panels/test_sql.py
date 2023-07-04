@@ -339,8 +339,8 @@ class SQLPanelTestCase(BaseTestCase):
         response = self.panel.process_request(self.request)
         # ensure the panel does not have content yet.
         self.assertNotIn("café", self.panel.content)
-        self.panel.generate_stats(self.request, response)
         # ensure the panel renders correctly.
+        self.panel.generate_stats(self.request, response)
         content = self.panel.content
         self.assertIn("café", content)
         self.assertValidHTML(content)

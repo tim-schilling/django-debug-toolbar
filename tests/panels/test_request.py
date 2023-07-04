@@ -116,20 +116,24 @@ class RequestPanelTestCase(BaseTestCase):
             "data": ["foo", "bar", 1],
             (2, 3): "tuple_key",
         }
-        data = {
-            "list": [(1, "value"), ("data", ["foo", "bar", 1]), ((2, 3), "tuple_key")]
+        expected = {
+            "list": [
+                ("1", "'value'"),
+                ("'data'", "['foo', 'bar', 1]"),
+                ("(2, 3)", "'tuple_key'"),
+            ]
         }
         response = self.panel.process_request(self.request)
         self.panel.generate_stats(self.request, response)
         panel_stats = self.panel.get_stats()
-        self.assertEqual(panel_stats["session"], data)
+        self.assertEqual(panel_stats["session"], expected)
 
         self.request.session = {
             "b": "b-value",
             "a": "a-value",
         }
-        data = {"list": [("a", "a-value"), ("b", "b-value")]}
+        expected = {"list": [("'a'", "'a-value'"), ("'b'", "'b-value'")]}
         response = self.panel.process_request(self.request)
         self.panel.generate_stats(self.request, response)
         panel_stats = self.panel.get_stats()
-        self.assertEqual(panel_stats["session"], data)
+        self.assertEqual(panel_stats["session"], expected)

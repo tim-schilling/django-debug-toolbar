@@ -210,6 +210,17 @@ def getframeinfo(frame: Any, context: int = 1) -> inspect.Traceback:
     return inspect.Traceback(filename, lineno, frame.f_code.co_name, lines, index)
 
 
+def pprint(value: Any) -> str:
+    """
+    Duplicates django.template.defaultfilters.pprint without the mark safe
+    decorator.
+    """
+    try:
+        return pformat(value)
+    except Exception as e:
+        return f"Error in formatting: {e.__class__.__name__}: {e}"
+
+
 def get_sorted_request_variable(
     variable: Union[Dict[str, Any], QueryDict]
 ) -> Dict[str, Union[List[Tuple[str, Any]], Any]]:
@@ -219,11 +230,17 @@ def get_sorted_request_variable(
     """
     try:
         if isinstance(variable, dict):
-            return {"list": [(k, variable.get(k)) for k in sorted(variable)]}
+            return {
+                "list": [(pprint(k), pprint(variable.get(k))) for k in sorted(variable)]
+            }
         else:
-            return {"list": [(k, variable.getlist(k)) for k in sorted(variable)]}
+            return {
+                "list": [
+                    (pprint(k), pprint(variable.getlist(k))) for k in sorted(variable)
+                ]
+            }
     except TypeError:
-        return {"raw": variable}
+        return {"raw": pprint(variable)}
 
 
 def get_stack(context=1) -> List[stubs.InspectStack]:

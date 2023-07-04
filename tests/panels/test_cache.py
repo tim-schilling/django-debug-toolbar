@@ -51,10 +51,7 @@ class CachePanelTestCase(BaseTestCase):
         ]
         self.assertEqual(
             calls,
-            [
-                ("get_or_set", ("baz", "val"), {}),
-                ("get", ("baz",), {}),
-            ],
+            [("get_or_set", "('baz', 'val')", "{}"), ("get", "('baz',)", "{}")],
         )
         self.assertEqual(
             self.panel.counts,
@@ -86,10 +83,7 @@ class CachePanelTestCase(BaseTestCase):
         ]
         self.assertEqual(
             calls,
-            [
-                ("set", ("foo", "bar"), {}),
-                ("get_or_set", ("foo", "other"), {}),
-            ],
+            [("set", "('foo', 'bar')", "{}"), ("get_or_set", "('foo', 'other')", "{}")],
         )
         self.assertEqual(
             self.panel.counts,

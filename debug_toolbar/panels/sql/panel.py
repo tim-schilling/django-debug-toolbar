@@ -76,18 +76,6 @@ def get_transaction_status_display(vendor, level):
     return choices.get(level)
 
 
-def _similar_query_key(query):
-    return query["raw_sql"]
-
-
-def _duplicate_query_key(query):
-    raw_params = () if query["raw_params"] is None else tuple(query["raw_params"])
-    # repr() avoids problems because of unhashable types
-    # (e.g. lists) when used as dictionary keys.
-    # https://github.com/jazzband/django-debug-toolbar/issues/1091
-    return (query["raw_sql"], repr(raw_params))
-
-
 def _process_query_groups(query_groups, databases, colors, name):
     counts = defaultdict(int)
     for (alias, _key), query_group in query_groups.items():
@@ -227,8 +215,8 @@ class SQLPanel(Panel):
             for query in self._queries:
                 alias = query["alias"]
 
-                similar_query_groups[(alias, _similar_query_key(query))].append(query)
-                duplicate_query_groups[(alias, _duplicate_query_key(query))].append(
+                similar_query_groups[(alias, query["similar_query_key"])].append(query)
+                duplicate_query_groups[(alias, query["duplicate_query_key"])].append(
                     query
                 )
 
@@ -256,9 +244,7 @@ class SQLPanel(Panel):
                         query["vendor"], query["trans_status"]
                     )
 
-                query["form"] = SignedDataForm(
-                    auto_id=None, initial=SQLSelectForm(initial=copy(query)).initial
-                )
+                query["query"] = copy(query)
 
                 if query["sql"]:
                     query["sql"] = reformat_sql(query["sql"], with_toggle=True)
@@ -311,3 +297,11 @@ class SQLPanel(Panel):
         title = "SQL {} queries".format(len(stats.get("queries", [])))
         value = stats.get("sql_time", 0)
         self.record_server_timing("sql_time", title, value)
+
+    def get_stats(self):
+        stats = super().get_stats()
+        for query in stats.setdefault("queries", []):
+            query["form"] = SignedDataForm(
+                auto_id=None, initial=SQLSelectForm(initial=query["query"]).initial
+            )
+        return stats

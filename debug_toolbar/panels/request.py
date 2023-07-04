@@ -3,7 +3,7 @@ from django.urls import resolve
 from django.utils.translation import gettext_lazy as _
 
 from debug_toolbar.panels import Panel
-from debug_toolbar.utils import get_name_from_obj, get_sorted_request_variable
+from debug_toolbar.utils import get_name_from_obj, get_sorted_request_variable, pprint
 
 
 class RequestPanel(Panel):
@@ -42,8 +42,8 @@ class RequestPanel(Panel):
             match = resolve(request.path)
             func, args, kwargs = match
             view_info["view_func"] = get_name_from_obj(func)
-            view_info["view_args"] = args
-            view_info["view_kwargs"] = kwargs
+            view_info["view_args"] = pprint(args)
+            view_info["view_kwargs"] = pprint(kwargs)
 
             if getattr(match, "url_name", False):
                 url_name = match.url_name
@@ -61,8 +61,11 @@ class RequestPanel(Panel):
         if hasattr(request, "session"):
             try:
                 session_list = [
-                    (k, request.session.get(k)) for k in sorted(request.session.keys())
+                    (pprint(k), pprint(request.session.get(k)))
+                    for k in sorted(request.session.keys())
                 ]
             except TypeError:
-                session_list = [(k, request.session.get(k)) for k in request.session]
+                session_list = [
+                    (pprint(k), pprint(request.session.get(k))) for k in request.session
+                ]
             self.record_stats({"session": {"list": session_list}})

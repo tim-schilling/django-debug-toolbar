@@ -191,7 +191,8 @@ class NormalCursorWrapper(DjDTCursorWrapper):
                 "duration": duration,
                 "raw_sql": sql,
                 "params": _params,
-                "raw_params": params,
+                "duplicate_query_key": _duplicate_query_key(sql, params),
+                "similar_query_key": sql,
                 "stacktrace": get_stack_trace(skip=2),
                 "template_info": template_info,
             }
@@ -243,3 +244,11 @@ class NormalCursorWrapper(DjDTCursorWrapper):
 
     def executemany(self, sql, param_list):
         return self._record(super().executemany, sql, param_list)
+
+
+def _duplicate_query_key(sql, raw_params):
+    raw_params = () if raw_params is None else tuple(raw_params)
+    # repr() avoids problems because of unhashable types
+    # (e.g. lists) when used as dictionary keys.
+    # https://github.com/jazzband/django-debug-toolbar/issues/1091
+    return (sql, repr(raw_params))

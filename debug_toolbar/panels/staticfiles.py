@@ -28,6 +28,13 @@ class StaticFile:
     def url(self):
         return storage.staticfiles_storage.url(self.path)
 
+    def as_context(self):
+        return {
+            "path": str(self),
+            "real_path": self.real_path(),
+            "url": self.url(),
+        }
+
 
 # This will collect the StaticFile instances across threads.
 used_static_files = ContextVar("djdt_static_used_static_files")
@@ -79,10 +86,10 @@ class StaticFilesPanel(panels.Panel):
 
     @property
     def title(self):
-        return _("Static files (%(num_found)s found, %(num_used)s used)") % {
-            "num_found": self.num_found,
-            "num_used": self.num_used,
-        }
+        return (
+            _("Static files (%(num_found)s found, %(num_used)s used)")
+            % self.get_stats()
+        )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -104,7 +111,7 @@ class StaticFilesPanel(panels.Panel):
 
     @property
     def nav_subtitle(self):
-        num_used = self.num_used
+        num_used = self.get_stats()["num_used"]
         return ngettext(
             "%(num_used)s file used", "%(num_used)s files used", num_used
         ) % {"num_used": num_used}
@@ -125,7 +132,9 @@ class StaticFilesPanel(panels.Panel):
             {
                 "num_found": self.num_found,
                 "num_used": len(self.used_paths),
-                "staticfiles": self.used_paths,
+                "staticfiles": [
+                    static_file.as_context() for static_file in self.used_paths
+                ],
                 "staticfiles_apps": self.get_staticfiles_apps(),
                 "staticfiles_dirs": self.get_staticfiles_dirs(),
                 "staticfiles_finders": self.get_staticfiles_finders(),
