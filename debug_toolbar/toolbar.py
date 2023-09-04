@@ -93,6 +93,7 @@ class DebugToolbar:
 
         If False, the panels will be loaded via Ajax.
         """
+        return False
         if (render_panels := self.config["RENDER_PANELS"]) is None:
             # If wsgi.multiprocess isn't in the headers, then it's likely
             # being served by ASGI. This type of set up is most likely
