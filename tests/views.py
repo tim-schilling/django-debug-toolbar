@@ -47,8 +47,14 @@ def json_view(request):
     return JsonResponse({"foo": "bar"})
 
 
-def regular_jinjia_view(request, title):
+def regular_jinja_view(request, title):
     return render(request, "jinja2/basic.jinja", {"title": title})
+
+
+def jinja_session_view(request):
+    if not request.session.get("jinja_session_view"):
+        request.session["jinja_session_view"] = True
+    return render(request, "jinja2/session.jinja")
 
 
 def listcomp_view(request):

@@ -141,6 +141,15 @@ class JinjaTemplateTestCase(IntegrationTestCase):
         self.assertContains(r, "<h3>Templates (2 rendered)</h3>")
         self.assertContains(r, "<small>jinja2/basic.jinja</small>")
 
+    def test_django_jinja2_session_fetch(self):
+        r = self.client.get("/jinja_session/")
+        print(r.content.decode("utf-8"))
+        r = self.client.get("/jinja_session/")
+        print(r.content.decode("utf-8"))
+        self.assertContains(r, "Test for foobar (Jinja)")
+        self.assertContains(r, "<h3>Templates (2 rendered)</h3>")
+        self.assertContains(r, "<small>jinja2/basic.jinja</small>")
+
 
 def context_processor(request):
     return {"content": "set by processor"}
