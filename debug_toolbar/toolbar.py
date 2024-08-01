@@ -6,6 +6,7 @@ import re
 import uuid
 from collections import OrderedDict
 from functools import lru_cache
+from inspect import iscoroutinefunction
 
 from django.apps import apps
 from django.conf import settings
@@ -28,12 +29,15 @@ class DebugToolbar:
     def __init__(self, request, get_response):
         self.request = request
         self.config = dt_settings.get_config().copy()
+        is_async = iscoroutinefunction(get_response)
         panels = []
         for panel_class in reversed(self.get_panel_classes()):
             panel = panel_class(self, get_response)
             panels.append(panel)
             if panel.enabled:
-                get_response = panel.process_request
+                get_response = (
+                    panel.aprocess_request if is_async else panel.process_request
+                )
         self.process_request = get_response
         # Use OrderedDict for the _panels attribute so that items can be efficiently
         # removed using FIFO order in the DebugToolbar.store() method.  The .popitem()
