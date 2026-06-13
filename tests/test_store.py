@@ -358,6 +358,8 @@ class CacheStoreWithMemoryBackendTestCase(CommonStoreTestsMixin, TestCase):
         "ddt_db_cache": {
             "BACKEND": "django.core.cache.backends.db.DatabaseCache",
             "LOCATION": "test_cache_store_table",
+            # Force the culling to occur on all writes in Django
+            "OPTIONS": {"CULL_PROBABILITY": 1},
         }
     },
 )
@@ -483,12 +485,6 @@ class CacheStoreWithDatabaseBackendTestCase(CommonStoreTestsMixin, TestCase):
                 for q in sql_panel._queries[initial_query_count:]
                 if "test_cache_store_table" in q.get("sql", "").lower()
             ]
-
-            self.assertEqual(
-                len(cache_queries),
-                4,
-                f"CacheStore DatabaseCache operations be tracked by SQLPanel, "
-                f"but found {len(cache_queries)} queries to 'test_cache_store_table' table",
-            )
+            self.assertEqual(len(cache_queries), 4)
         finally:
             sql_panel.disable_instrumentation()
