@@ -14,6 +14,7 @@ backend
 backends
 backported
 biome
+booleans
 checkbox
 contrib
 csp
@@ -47,6 +48,7 @@ multi
 neo
 nothreading
 paddings
+postgresql
 pre
 profiler
 psycopg
