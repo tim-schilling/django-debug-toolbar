@@ -112,6 +112,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "example", "static")]
 ENABLE_DEBUG_TOOLBAR = DEBUG and "test" not in sys.argv
 if ENABLE_DEBUG_TOOLBAR:
     INSTALLED_APPS += [
+        "django_salmon",
         "debug_toolbar",
     ]
     MIDDLEWARE += [

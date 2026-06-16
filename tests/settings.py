@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_salmon",
     "debug_toolbar",
     # We are not actively using template-partials; we just want more nesting
     # in our template loader configuration, see

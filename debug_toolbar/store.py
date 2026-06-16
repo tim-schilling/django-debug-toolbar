@@ -225,9 +225,9 @@ class _UntrackedCache:
     """
     Wrapper around a Django cache backend that suppresses debug toolbar tracking.
 
-    The cache panel's monkey-patched methods check ``cache._djdt_panel`` and skip
-    recording when it is ``None``.  This proxy temporarily sets that attribute to
-    ``None`` around every call so the toolbar's own cache operations are invisible.
+    The cache panel's signal handler checks ``cache._djdt_panel`` and skips
+    recording when it is ``False``.  This proxy temporarily sets that attribute
+    around every call so the toolbar's own cache operations are invisible.
     """
 
     def __init__(self, cache):
@@ -240,12 +240,11 @@ class _UntrackedCache:
 
         @functools.wraps(attr)
         def untracked(*args, **kwargs):
-            panel = getattr(self._cache, "_djdt_panel", None)
-            self._cache._djdt_panel = None
+            self._cache._djdt_panel = False
             try:
                 return attr(*args, **kwargs)
             finally:
-                self._cache._djdt_panel = panel
+                del self._cache._djdt_panel
 
         return untracked
 
