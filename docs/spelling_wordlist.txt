@@ -48,7 +48,6 @@ multi
 neo
 nothreading
 paddings
-postgresql
 pre
 profiler
 psycopg

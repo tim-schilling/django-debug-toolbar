@@ -32,7 +32,7 @@ Pending
   ``debug_toolbar_urls``.
 * Fixed cookie ``expires`` calculation in ``djdt.cookie.set``.
 * Account for the new ``CULL_PROBABILITY`` in Django 6.2 in tests.
-* Support Django 6.2's handling of booleans for non-postgresql databases.
+* Support Django 6.2's handling of booleans for non-PostgreSQL databases.
 
 6.3.0 (2026-04-01)
 ------------------
