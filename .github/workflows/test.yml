@@ -46,7 +46,7 @@ jobs:
       fail-fast: false
       max-parallel: 5
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
 
     services:
       mariadb:
@@ -116,7 +116,7 @@ jobs:
       fail-fast: false
       max-parallel: 5
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
         database: [postgresql, postgis, psycopg3]
         exclude:
             - python-version: '3.13'
@@ -126,6 +126,10 @@ jobs:
             - python-version: '3.14'
               database: postgis
             - python-version: '3.14'
+              database: postgresql
+            - python-version: '3.15'
+              database: postgis
+            - python-version: '3.15'
               database: postgresql
         # Add postgis3 to our matrix for modern Python versions
         include:
@@ -138,6 +142,12 @@ jobs:
             - python-version: '3.14'
               database: postgis3
             - python-version: '3.14'
+              database: psycopg3
+              env:
+                DJANGO_SELENIUM_TESTS=true
+            - python-version: '3.15'
+              database: postgis3
+            - python-version: '3.15'
               database: psycopg3
               env:
                 DJANGO_SELENIUM_TESTS=true
@@ -215,7 +225,7 @@ jobs:
       fail-fast: false
       max-parallel: 5
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14']
+        python-version: ['3.10', '3.11', '3.12', '3.13', '3.14', '3.15']
 
     steps:
     - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10  # v6.0.3
