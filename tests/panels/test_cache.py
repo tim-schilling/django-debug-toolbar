@@ -1,4 +1,5 @@
 from django.core import cache
+from django_salmon.signals import observe_cache_operation
 
 from debug_toolbar.panels.cache import CachePanel
 
@@ -159,20 +160,23 @@ class CachePanelTestCase(BaseTestCase):
         cache.cache.get("foo")
         self.assertEqual(self.panel.calls[0]["backend"], "default (LocMemCache)")
 
-    def test_patching_only_applied_once(self):
+    def test_signal_connected_once(self):
         """
-        Confirm that reapplying and disabling the cache patching only wraps
-        the cache methods once
+        Confirm that calling ready() multiple times only connects the signal handler once.
         """
-        for _ in range(2):
-            self.panel.enable_instrumentation()
-            self.panel.disable_instrumentation()
-        nested_wraps = 0
-        wrapped = cache.cache.get.__wrapped__
-        while wrapped is not None:
-            try:
-                wrapped = wrapped.__wrapped__
-                nested_wraps += 1
-            except AttributeError:
-                break
-        self.assertEqual(nested_wraps, 0)
+        CachePanel.ready()
+        CachePanel.ready()
+        matching = [
+            dispatch_uid
+            for (dispatch_uid, _mem_id), *_args in observe_cache_operation.receivers
+        ]
+        self.assertListEqual(matching, ["djdt_cache_panel"])
+
+    def test_enable_disable_sets_removes_current_instance(self):
+        """
+        Confirm that repeated enable/disable cycles sets and removes current_instance property.
+        """
+        self.panel.enable_instrumentation()
+        self.assertIsNotNone(self.panel.current_instance())
+        self.panel.disable_instrumentation()
+        self.assertIsNone(self.panel.current_instance())
